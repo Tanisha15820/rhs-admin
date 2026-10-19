@@ -1,0 +1,6 @@
+# Allow all search engine crawlers to discover and index content
+User-agent: *
+Allow: /
+
+# Sitemap location for Googlebot, Bingbot, and search engines
+Sitemap: https://www.reinforcehealth.com/sitemap.xml
