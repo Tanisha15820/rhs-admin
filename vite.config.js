@@ -12,22 +12,5 @@ export default defineConfig({
 
   build: {
     chunkSizeWarningLimit: 1000,
-
-    rolldownOptions: {
-      output: {
-        codeSplitting: {
-          groups: [
-            {
-              name: "react-vendor",
-              test: /node_modules[\\/]react(?:-dom)?[\\/]/,
-            },
-            {
-              name: "mui-vendor",
-              test: /node_modules[\\/]@mui[\\/]/,
-            },
-          ],
-        },
-      },
-    },
   },
 });
