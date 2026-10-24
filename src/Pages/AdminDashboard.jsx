@@ -7,11 +7,13 @@ import BannersTab from "../Components/DashboardTabs/BannersTab";
 
 // Storage getters
 import { getAllBanners } from "../utils/bannerStorage";
-import { getMachineProducts } from "../utils/machineStorage";
-import { getAllTestimonials } from "../utils/testimonialStorage";
+import { fetchProducts } from "../services/productService";
+import { fetchTestimonials } from "../services/testimonialService";
+import { clearLegacyTestimonialsStorage } from "../utils/testimonialStorage";
+import { fetchClients } from "../services/clientService";
+import { clearLegacyClientsStorage } from "../utils/clientStorage";
 import { getAllFaqs } from "../utils/faqStorage";
-import { getAllClients } from "../utils/clientStorage";
-import { getAllBlogs } from "../utils/blogStorage";
+import { getAllBlogs, clearLegacyBlogsStorage } from "../utils/blogStorage";
 
 /**
  * AdminDashboard Layout & Parent Container
@@ -40,34 +42,62 @@ function AdminDashboard() {
     }, 4000);
   };
 
-  // Load all data from localStorage on initial page render and on updates
+  const reloadProducts = () => {
+    fetchProducts("all")
+      .then((data) => setProducts(data))
+      .catch((err) => {
+        console.error("Failed to load products from API:", err);
+      });
+  };
+
+  const reloadTestimonials = () => {
+    fetchTestimonials("all")
+      .then((data) => setTestimonials(data))
+      .catch((err) => {
+        console.error("Failed to load testimonials from API:", err);
+      });
+  };
+
+  const reloadClients = () => {
+    fetchClients("all")
+      .then((data) => setClients(data))
+      .catch((err) => {
+        console.error("Failed to load clients from API:", err);
+      });
+  };
+
+  // Load all data on initial page render and on updates
   useEffect(() => {
+    clearLegacyTestimonialsStorage();
+    clearLegacyClientsStorage();
+    clearLegacyBlogsStorage();
+
     const loadAllData = () => {
       setBanners(getAllBanners());
-      setProducts(getMachineProducts());
-      setTestimonials(getAllTestimonials());
+      reloadProducts();
+      reloadTestimonials();
       setFaqs(getAllFaqs());
-      setClients(getAllClients());
+      reloadClients();
       setBlogs(getAllBlogs());
     };
 
     loadAllData();
 
-    // Listen for storage update events
+    // Listen for update events
     window.addEventListener("rhs_banner_updated", loadAllData);
-    window.addEventListener("rhs_machine_updated", loadAllData);
-    window.addEventListener("rhs_testimonials_updated", loadAllData);
+    window.addEventListener("rhs_products_updated", reloadProducts);
+    window.addEventListener("rhs_testimonials_updated", reloadTestimonials);
     window.addEventListener("rhs_faqs_updated", loadAllData);
-    window.addEventListener("rhs_clients_updated", loadAllData);
+    window.addEventListener("rhs_clients_updated", reloadClients);
     window.addEventListener("rhs_blogs_updated", loadAllData);
     window.addEventListener("storage", loadAllData);
 
     return () => {
       window.removeEventListener("rhs_banner_updated", loadAllData);
-      window.removeEventListener("rhs_machine_updated", loadAllData);
-      window.removeEventListener("rhs_testimonials_updated", loadAllData);
+      window.removeEventListener("rhs_products_updated", reloadProducts);
+      window.removeEventListener("rhs_testimonials_updated", reloadTestimonials);
       window.removeEventListener("rhs_faqs_updated", loadAllData);
-      window.removeEventListener("rhs_clients_updated", loadAllData);
+      window.removeEventListener("rhs_clients_updated", reloadClients);
       window.removeEventListener("rhs_blogs_updated", loadAllData);
       window.removeEventListener("storage", loadAllData);
     };
@@ -126,23 +156,29 @@ function AdminDashboard() {
             setBanners,
             products,
             setProducts,
+            reloadProducts,
             testimonials,
             setTestimonials,
+            reloadTestimonials,
             faqs,
             setFaqs,
             clients,
             setClients,
+            reloadClients,
             blogs,
             setBlogs,
             showNotify,
           }}
         />
       ) : (
+        /* Temporarily commented out fallback banner section
         <BannersTab
           banners={banners}
           setBanners={setBanners}
           showNotify={showNotify}
         />
+        */
+        null
       )}
     </AdminLayout>
   );

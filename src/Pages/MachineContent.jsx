@@ -1,45 +1,33 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
 import MachinesTab from "../Components/DashboardTabs/MachinesTab";
 import SEO from "../Components/SEO";
-import { getMachineProducts } from "../utils/machineStorage";
 
 /**
  * MachineContent Page
  * Route: /dashboard/machine-content (or /admin/machine-content)
- * Dedicated page for managing medical machinery images, specs, and details.
+ * Dedicated page for managing healthcare product catalog via backend API.
  */
 function MachineContent({ showNotify: propNotify }) {
   const context = useOutletContext() || {};
-  const [localProducts, setLocalProducts] = useState(() => getMachineProducts());
-
-  const products = context.products ?? localProducts;
-  const setProducts = context.setProducts ?? setLocalProducts;
   const showNotify = context.showNotify ?? propNotify ?? (() => {});
 
-  // Sync with localStorage updates if rendered standalone
+  // Remove obsolete localStorage key if present
   useEffect(() => {
-    const handleUpdate = () => {
-      setLocalProducts(getMachineProducts());
-    };
-    window.addEventListener("rhs_machine_updated", handleUpdate);
-    window.addEventListener("storage", handleUpdate);
-    return () => {
-      window.removeEventListener("rhs_machine_updated", handleUpdate);
-      window.removeEventListener("storage", handleUpdate);
-    };
+    try {
+      localStorage.removeItem("rhs_machine_products_v1");
+    } catch {}
   }, []);
 
   return (
     <>
       <SEO
-        title="Machine Image & Content Management | Reinforce Healthcare Services"
-        description="Manage medical machinery catalog images, features, descriptions, and rental information."
+        title="Healthcare Products | Reinforce Healthcare Services"
+        description="Manage healthcare products catalog images, features, descriptions, and rental information."
       />
       <MachinesTab
-        products={products}
-        setProducts={setProducts}
         showNotify={showNotify}
+        onProductsChanged={context.reloadProducts}
       />
     </>
   );

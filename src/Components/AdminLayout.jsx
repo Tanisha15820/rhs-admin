@@ -39,12 +39,13 @@ const AdminLayout = ({ activeTab, setActiveTab, counts = {}, children }) => {
     if (pathname.includes("faq")) return "faqs";
     if (pathname.includes("clients")) return "clients";
     if (pathname.includes("blogs")) return "blogs";
-    return "banners";
+    return "machines";
   };
 
   const currentTab = activeTab || getActiveTabFromPath(location.pathname);
 
   const navItems = [
+    /* Temporarily commented out Homepage Banners
     {
       id: "banners",
       path: "/dashboard/homepage-banner",
@@ -53,12 +54,13 @@ const AdminLayout = ({ activeTab, setActiveTab, counts = {}, children }) => {
       description: "Hero Slider CRUD",
       count: counts.banners,
     },
+    */
     {
       id: "machines",
       path: "/dashboard/machine-content",
-      label: "Machine Image & Content",
+      label: "Healthcare Products",
       icon: <Inventory2OutlinedIcon style={{ fontSize: 22 }} />,
-      description: "Medical Machinery CRUD",
+      description: "Healthcare Products CRUD",
       count: counts.products,
     },
     {
@@ -69,6 +71,7 @@ const AdminLayout = ({ activeTab, setActiveTab, counts = {}, children }) => {
       description: "Client reviews & quotes",
       count: counts.testimonials,
     },
+    /* Temporarily commented out FAQ Section
     {
       id: "faqs",
       path: "/dashboard/faq",
@@ -77,6 +80,7 @@ const AdminLayout = ({ activeTab, setActiveTab, counts = {}, children }) => {
       description: "FAQ Q&A management",
       count: counts.faqs,
     },
+    */
     {
       id: "clients",
       path: "/dashboard/clients",
@@ -88,7 +92,7 @@ const AdminLayout = ({ activeTab, setActiveTab, counts = {}, children }) => {
     {
       id: "blogs",
       path: "/dashboard/blogs",
-      label: "Blogs & Articles",
+      label: "Blogs",
       icon: <ArticleOutlinedIcon style={{ fontSize: 22 }} />,
       description: "Editorial blog cards CRUD",
       count: counts.blogs,
@@ -98,15 +102,15 @@ const AdminLayout = ({ activeTab, setActiveTab, counts = {}, children }) => {
   const getTabTitle = (tabKey = currentTab) => {
     switch (tabKey) {
       case "machines":
-        return "Machine Image & Content Management";
+        return "Healthcare Products";
       case "testimonials":
-        return "Homepage Testimonials Management";
+        return "Testimonials";
       case "faqs":
         return "FAQ Questions & Answers Management";
       case "clients":
-        return "Client Logos & Partners Management";
+        return "Clients";
       case "blogs":
-        return "Blogs & Articles Management";
+        return "Blogs";
       case "banners":
       default:
         return "Homepage Banner Management";
@@ -116,7 +120,7 @@ const AdminLayout = ({ activeTab, setActiveTab, counts = {}, children }) => {
   const getTabBreadcrumb = (tabKey = currentTab) => {
     switch (tabKey) {
       case "machines":
-        return "Machine Content";
+        return "Healthcare Products";
       case "testimonials":
         return "Testimonials";
       case "faqs":
@@ -124,7 +128,7 @@ const AdminLayout = ({ activeTab, setActiveTab, counts = {}, children }) => {
       case "clients":
         return "Clients";
       case "blogs":
-        return "Blogs & Articles";
+        return "Blogs";
       case "banners":
       default:
         return "Homepage Banner";
@@ -149,7 +153,7 @@ const AdminLayout = ({ activeTab, setActiveTab, counts = {}, children }) => {
       >
         {/* Logo / Header */}
         <div className="flex h-20 items-center justify-between border-b border-slate-100 px-6">
-          <Link to="/dashboard/homepage-banner" className="flex items-center gap-3">
+          <Link to="/dashboard" className="flex items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-primary/15 to-primary-dark/15 p-1.5 shadow-xs">
               <img
                 src={logo}
@@ -290,7 +294,7 @@ const AdminLayout = ({ activeTab, setActiveTab, counts = {}, children }) => {
             </div>
             <div className="min-w-0 flex-1">
               <p className="truncate text-xs font-bold text-slate-800">
-                {user.name}
+                {user.name || user.username || "RHS Administrator"}
               </p>
               <p className="truncate text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />

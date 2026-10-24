@@ -36,11 +36,13 @@ function HomepageBanner({ showNotify: propNotify }) {
         title="Homepage Banner Management | Reinforce Healthcare Services"
         description="Comprehensive dashboard to add, edit, and organize homepage hero banners and slider content."
       />
+      {/* Temporarily commented out
       <BannersTab
         banners={banners}
         setBanners={setBanners}
         showNotify={showNotify}
       />
+      */}
     </>
   );
 }

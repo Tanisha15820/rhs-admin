@@ -16,7 +16,16 @@ export const BLOG_IMAGE_PRESETS = [
   { id: "robotic_surgery", label: "Robotic / Flexible URS (robotic)", src: roboticImg },
 ];
 
-export const DEFAULT_BLOGS = [
+export const BLOG_PRESET_MAP = {
+  blog_3: blogImg1,
+  blog_2: blogImg2,
+  blog_1: blogImg3,
+  blog_4: blogImg4,
+  laser_tech: laserTechImg,
+  robotic_surgery: roboticImg,
+};
+
+export const INITIAL_BLOGS = [
   {
     id: "blog-1",
     tag: "Surgical Innovation",
@@ -33,7 +42,24 @@ export const DEFAULT_BLOGS = [
     presetKey: "blog_3",
     image: "",
     featured: true,
+    published: true,
     views: "2.4k",
+    subtitle:
+      "A deep dive into sub-millimeter thermal margin control, rapid hemostasis, and OT instrument standardization.",
+    keyTakeaways: [
+      "Thermal spread is restricted to <0.8mm compared to 3-5mm with standard monopolar electrosurgery.",
+      "Plasma corona layer enables simultaneous vaporized tissue resection and rapid capillary sealing.",
+      "Reduces postoperative tissue edema, promoting faster patient discharge and lower pain scores.",
+      "Seamless integration with modern laparoscopic and open surgery generator consoles.",
+    ],
+    content:
+      "In contemporary operating theaters, surgical safety and post-op healing velocity are heavily influenced by the extent of collateral thermal damage. Conventional monopolar and standard bipolar units carry a non-trivial risk of lateral heat transmission into adjacent delicate anatomical structures such as nerves, ureters, and mesenteric vessels. Bipolar plasma technology addresses this dilemma by utilizing high-frequency energy passed through conductive saline media. This generates a localized, highly controlled plasma field composed of ionized particles that disintegrate organic molecular bonds at significantly lower core temperatures.",
+    specs: [
+      { label: "Operating Frequency", value: "350 kHz – 420 kHz" },
+      { label: "Thermal Spread Radius", value: "< 0.8 mm" },
+      { label: "Conductive Medium", value: "Isotonic Saline (0.9% NaCl)" },
+      { label: "Compatible Procedures", value: "General, Urological & Gynecological Laparoscopy" },
+    ],
   },
   {
     id: "blog-2",
@@ -50,7 +76,25 @@ export const DEFAULT_BLOGS = [
       "A practical comparison of diode laser systems against conventional equipment, covering cost of ownership, safety margins, and day-to-day usability in the OT.",
     presetKey: "blog_2",
     image: "",
+    featured: false,
+    published: true,
     views: "1.8k",
+    subtitle:
+      "Balancing wavelength absorption, hemoperfusion safety, and capital expenditure across surgical disciplines.",
+    keyTakeaways: [
+      "Dual 980nm and 1470nm wavelengths offer high water and hemoglobin absorption coefficients.",
+      "Compact solid-state diode construction eliminates frequent flashlamp replacements.",
+      "Substantially reduced fiber degradation during high-angle laser deflection.",
+      "Faster recovery curves in outpatient proctology, vascular, and ENT interventions.",
+    ],
+    content:
+      "Diode lasers have transformed outpatient surgical procedures by optimizing absorption at both 980nm (targeting hemoglobin) and 1470nm (targeting intracellular water). This dual-action profile enables surgeons to achieve clean incision and instant coagulation without the high collateral thermal zones characteristic of older radiofrequency or Nd:YAG systems.",
+    specs: [
+      { label: "Primary Wavelengths", value: "980 nm / 1470 nm Dual Output" },
+      { label: "Max Optical Output", value: "15W – 30W Continual / Pulsed" },
+      { label: "Cooling Method", value: "Internal Solid-State Air Cooling" },
+      { label: "Sterilization", value: "Autoclavable Handpieces + Bare Fibers" },
+    ],
   },
   {
     id: "blog-3",
@@ -58,11 +102,34 @@ export const DEFAULT_BLOGS = [
     title: "Building an Equipment Procurement Checklist for General Surgery",
     date: "10 Jul 2026",
     readTime: "4 min read",
+    author: {
+      name: "Rajeshwar Rao",
+      role: "Biomedical Director, Apex Healthcare",
+      initials: "RR",
+    },
     excerpt:
       "From compliance to after-sales support, here is a checklist hospital administrators can use before finalizing any surgical equipment vendor.",
     presetKey: "blog_1",
     image: "",
+    featured: false,
+    published: true,
     views: "1.2k",
+    subtitle:
+      "A pragmatic framework for hospital C-suites, biomedical engineers, and OT committees.",
+    keyTakeaways: [
+      "Mandate guaranteed on-site response SLAs within 4 hours for emergency surgical units.",
+      "Verify comprehensive optical and fiber warranty terms against accidental operator damage.",
+      "Audit software upgrade pathways and DICOM / PACS connectivity compliance upfront.",
+      "Assess total lifecycle cost including preventative maintenance and preventive calibration.",
+    ],
+    content:
+      "Acquiring high-end surgical machinery is one of the most critical capital expenditures a healthcare institution undertakes. However, procurement teams frequently focus disproportionately on the initial invoice price, underestimating post-warranty service agreements, consumable costs, and vendor downtime penalties.",
+    specs: [
+      { label: "Recommended SLA", value: "< 4 Hours Critical Response" },
+      { label: "Preventative Maintenance", value: "Quarterly Calibration Checks" },
+      { label: "Loaner Machine Provision", value: "Guaranteed within 12 Hours" },
+      { label: "Staff Certification", value: "Structured Hands-On OT Training" },
+    ],
   },
   {
     id: "blog-4",
@@ -79,7 +146,25 @@ export const DEFAULT_BLOGS = [
       "A look at how one multi-speciality hospital cut average OT turnaround time by rethinking their general surgery instrument stack.",
     presetKey: "blog_4",
     image: "",
+    featured: false,
+    published: true,
     views: "3.1k",
+    subtitle:
+      "Operational blueprints from high-volume OT suites achieving peak procedural velocity.",
+    keyTakeaways: [
+      "Standardizing universal sterile trays reduced pre-incision setup delays by 18 minutes.",
+      "Dedicated quick-dock mobile laser trolleys eliminated cross-theater cable transit bottlenecks.",
+      "Synchronized biomedical handoffs increased surgical slots by 2 to 4 procedures daily.",
+      "Real-time digital equipment logging minimized pre-procedure missing-component delays.",
+    ],
+    content:
+      "While surgeon operating speed is often scrutinized, empirical time-motion studies indicate that OT turnaround delays stem primarily from sterile processing lag, delayed instrument tray verification, and cumbersome equipment repositioning. By implementing modular instrument stacks, the surgical suite transitions seamlessly.",
+    specs: [
+      { label: "Average Time Saved", value: "18 Minutes Per Changeover" },
+      { label: "Daily Slot Increase", value: "+2 to +4 Surgical Slots" },
+      { label: "Tray Error Reduction", value: "94% Drop in Missing Items" },
+      { label: "Staff Morale Score", value: "+35% Improvement" },
+    ],
   },
   {
     id: "blog-5",
@@ -96,7 +181,25 @@ export const DEFAULT_BLOGS = [
       "Exploring sub-millimeter dusting, ultra-low retropulsion, and fiber flexibility that make Thulium Fiber Laser systems a game changer for calculus fragmentation.",
     presetKey: "laser_tech",
     image: "",
+    featured: false,
+    published: true,
     views: "2.9k",
+    subtitle:
+      "Why Thulium Fiber Laser (TFL) is replacing legacy Holmium in high-complexity endourology.",
+    keyTakeaways: [
+      "Wavelength of 1940nm closely aligns with the peak absorption of liquid water at 37°C.",
+      "Generates ultra-fine 'dust' particles (<0.5mm), eliminating tedious stone basket retrieval.",
+      "Near-zero retropulsion maintains stone position in renal calyces without chase-back.",
+      "Enables ultra-thin 150μm-200μm fibers with full scope deflection and high irrigation flow.",
+    ],
+    content:
+      "The 1940nm wavelength of Thulium Fiber Lasers matches the natural water absorption peak nearly four times more closely than the 2100nm of traditional Holmium:YAG. The result is rapid micro-bubble collapse that disintegrates urinary calculi into microscopic dust rather than jagged fragments.",
+    specs: [
+      { label: "Laser Wavelength", value: "1940 nm (TFL Peak Water Absorption)" },
+      { label: "Repetition Rate", value: "Up to 2400 Hz High-Frequency" },
+      { label: "Fiber Diameters", value: "150 μm, 200 μm, 272 μm" },
+      { label: "Retropulsion Profile", value: "Minimal to Zero Displacement" },
+    ],
   },
   {
     id: "blog-6",
@@ -113,106 +216,69 @@ export const DEFAULT_BLOGS = [
       "Evaluating maintenance cycles, optical clarity breakdown, sterilization turnaround, and infection control to determine the ideal ureterorenoscope deployment.",
     presetKey: "robotic_surgery",
     image: "",
+    featured: false,
+    published: true,
     views: "1.5k",
+    subtitle:
+      "Evaluating repair vulnerability, sterilizer cycles, and cross-infection protocols.",
+    keyTakeaways: [
+      "Reusable scopes average 8 to 15 cases before needing costly optical or deflection repairs.",
+      "Single-use digital ureterorenoscopes guarantee pristine optical clarity and zero prior damage.",
+      "Eliminates ethylene oxide (EtO) / low-temp hydrogen peroxide turnaround waiting time.",
+      "Hybrid hospital strategy: single-use for difficult lower pole stones, reusable for routine cases.",
+    ],
+    content:
+      "Flexible video ureterorenoscopes are among the most fragile and heavily utilized instruments in any urology suite. Accidental laser strike inside the working channel, excessive deflection during lower-pole stone access, and harsh automated chemical reprocessing lead to frequent repair bills.",
+    specs: [
+      { label: "Deflection Angle", value: "275° Up / 275° Down" },
+      { label: "Outer Diameter", value: "7.5 Fr / 8.5 Fr Tapered Tip" },
+      { label: "Working Channel", value: "3.6 Fr for High-Flow Irrigation" },
+      { label: "Camera Sensor", value: "Digital CMOS with Dual LED illumination" },
+    ],
   },
 ];
 
+// Helper to resolve an image URL or preset asset
+export const getResolvedBlogImage = (blog) => {
+  if (blog?.image && typeof blog.image === "string" && blog.image.trim() !== "") {
+    return blog.image;
+  }
+  if (blog?.presetKey && BLOG_PRESET_MAP[blog.presetKey]) {
+    return BLOG_PRESET_MAP[blog.presetKey];
+  }
+  return blogImg1;
+};
+
+// In-memory blog state (no localStorage persistence)
+let inMemoryBlogs = [...INITIAL_BLOGS];
+
+/**
+ * Retrieve current active blogs list in-memory
+ */
 export const getAllBlogs = () => {
-  try {
-    const raw = localStorage.getItem(BLOGS_STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed;
-      }
-    }
-    return DEFAULT_BLOGS;
-  } catch (err) {
-    console.warn("Failed reading blogs from localStorage, falling back to defaults:", err);
-    return DEFAULT_BLOGS;
-  }
+  return inMemoryBlogs.map((b) => ({ ...b }));
 };
 
+/**
+ * Update current in-memory blogs
+ */
 export const saveAllBlogs = (blogs) => {
+  inMemoryBlogs = Array.isArray(blogs) ? [...blogs] : [];
+  window.dispatchEvent(
+    new CustomEvent("rhs_blogs_updated", {
+      detail: { blogs: inMemoryBlogs },
+    })
+  );
+};
+
+/**
+ * Remove legacy mock blogs from browser localStorage if present
+ */
+export const clearLegacyBlogsStorage = () => {
   try {
-    localStorage.setItem(BLOGS_STORAGE_KEY, JSON.stringify(blogs));
-    window.dispatchEvent(
-      new CustomEvent("rhs_blogs_updated", {
-        detail: { blogs },
-      })
-    );
-  } catch (err) {
-    console.error("Failed saving blogs to localStorage:", err);
+    localStorage.removeItem(BLOGS_STORAGE_KEY);
+    localStorage.removeItem("rhs_blogs_saved_v1");
+  } catch {
+    // ignore
   }
-};
-
-export const addBlog = (blogData) => {
-  const current = getAllBlogs();
-  const authorName = blogData.author?.name || "Reinforce Clinical Team";
-  const initials = authorName
-    .split(" ")
-    .map((w) => w[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase() || "RC";
-
-  const newBlog = {
-    id: `blog-${Date.now()}`,
-    tag: blogData.tag?.trim() || "Article",
-    title: blogData.title?.trim() || "Untitled Blog Post",
-    date:
-      blogData.date?.trim() ||
-      new Date().toLocaleDateString("en-US", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-      }),
-    readTime: blogData.readTime?.trim() || "5 min read",
-    excerpt: blogData.excerpt?.trim() || "",
-    presetKey: blogData.presetKey || "blog_3",
-    image: blogData.image || "",
-    author: {
-      name: authorName,
-      role: blogData.author?.role || "Surgical Equipment Specialist",
-      initials: blogData.author?.initials || initials,
-    },
-    featured: Boolean(blogData.featured),
-    published: blogData.published !== false,
-    views: blogData.views || "1.2k",
-  };
-  const updated = [newBlog, ...current];
-  saveAllBlogs(updated);
-  return updated;
-};
-
-export const updateBlog = (id, updatedFields) => {
-  const current = getAllBlogs();
-  const updated = current.map((blog) => {
-    if (blog.id === id) {
-      return {
-        ...blog,
-        ...updatedFields,
-        author: updatedFields.author || blog.author || {
-          name: "Reinforce Clinical Team",
-          role: "Surgical Equipment Specialist",
-          initials: "RC",
-        },
-      };
-    }
-    return blog;
-  });
-  saveAllBlogs(updated);
-  return updated;
-};
-
-export const deleteBlog = (id) => {
-  const current = getAllBlogs();
-  const updated = current.filter((b) => b.id !== id);
-  saveAllBlogs(updated);
-  return updated;
-};
-
-export const resetBlogs = () => {
-  saveAllBlogs(DEFAULT_BLOGS);
-  return DEFAULT_BLOGS;
 };

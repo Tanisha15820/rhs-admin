@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import ShieldOutlinedIcon from "@mui/icons-material/ShieldOutlined";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
@@ -11,7 +11,7 @@ import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined";
 import ErrorOutlinedIcon from "@mui/icons-material/ErrorOutlined";
 import VerifiedUserOutlinedIcon from "@mui/icons-material/VerifiedUserOutlined";
 import logo from "../assets/images/compressed_rhs_logo.png";
-import { login, DEFAULT_CREDENTIALS, isAuthenticated } from "../utils/auth";
+import { login } from "../utils/auth";
 import SEO from "../Components/SEO";
 
 const AdminLogin = () => {
@@ -21,45 +21,34 @@ const AdminLogin = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  // Redirect to the dashboard if already logged in
-  useEffect(() => {
-    if (isAuthenticated()) {
-      const destination =
-        location.state?.from?.pathname || "/dashboard/homepage-banner";
-
-      navigate(destination, { replace: true });
-    }
-  }, []);
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     setError("");
     setIsLoading(true);
 
-    setTimeout(() => {
-      const result = login(username, password);
+    try {
+      const result = await login(username, password);
 
       if (result.success) {
+        const fromPath = location.state?.from?.pathname;
         const destination =
-          location.state?.from?.pathname || "/dashboard/homepage-banner";
+          fromPath && fromPath !== "/" && fromPath !== "/login"
+            ? fromPath
+            : "/dashboard/machine-content";
 
         navigate(destination, { replace: true });
       } else {
         setError(result.message || "Invalid username or password.");
-        setIsLoading(false);
       }
-    }, 400);
-  };
-
-  const handleFillDemo = () => {
-    setUsername(DEFAULT_CREDENTIALS.username);
-    setPassword(DEFAULT_CREDENTIALS.password);
-    setError("");
+    } catch (err) {
+      setError("An unexpected error occurred. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -224,26 +213,6 @@ const AdminLogin = () => {
                 </div>
               </div>
 
-              {/* Remember + Forgot */}
-              <div className="flex items-center justify-between">
-                <label className="flex cursor-pointer items-center gap-1.5 text-[12px] text-slate-500">
-                  <input
-                    type="checkbox"
-                    checked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)}
-                    className="h-3 w-3 accent-[#258ee0]"
-                  />
-                  Remember me
-                </label>
-
-                <button
-                  type="button"
-                  onClick={() => alert("Please contact the administrator.")}
-                  className="text-[12px] font-medium text-[#318ed0] hover:underline"
-                >
-                  Forgot Password?
-                </button>
-              </div>
 
               {/* Login Button */}
               <button

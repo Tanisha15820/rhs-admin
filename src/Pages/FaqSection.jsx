@@ -36,11 +36,13 @@ function FaqSection({ showNotify: propNotify }) {
         title="FAQ Questions & Answers Management | Reinforce Healthcare Services"
         description="Manage frequently asked questions, detailed answers, and categories for hospital equipment rental."
       />
+      {/* Temporarily commented out
       <FaqsTab
         faqs={faqs}
         setFaqs={setFaqs}
         showNotify={showNotify}
       />
+      */}
     </>
   );
 }
