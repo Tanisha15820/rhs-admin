@@ -6,8 +6,6 @@ import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import CloudUploadOutlinedIcon from "@mui/icons-material/CloudUploadOutlined";
 import CloseIcon from "@mui/icons-material/Close";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
-import StarRoundedIcon from "@mui/icons-material/StarRounded";
-import StarOutlineRoundedIcon from "@mui/icons-material/StarOutlineRounded";
 import CalendarTodayOutlinedIcon from "@mui/icons-material/CalendarTodayOutlined";
 import AccessTimeOutlinedIcon from "@mui/icons-material/AccessTimeOutlined";
 import RemoveRedEyeOutlinedIcon from "@mui/icons-material/RemoveRedEyeOutlined";
@@ -17,6 +15,8 @@ import CircularProgress from "@mui/material/CircularProgress";
 // Storage, services, and image presets
 import {
   fetchBlogs,
+  fetchBlogById,
+
   createBlog,
   updateBlog,
   deleteBlog,
@@ -24,9 +24,9 @@ import {
 } from "../../services/blogService";
 import { getResolvedBlogImage } from "../../utils/blogStorage";
 
-export default function BlogsTab({ showNotify, blogs: propBlogs, setBlogs: propSetBlogs }) {
+export default function BlogsTab({ showNotify, onBlogsChanged }) {
   // Blog records state
-  const [blogs, setBlogs] = useState(propBlogs || []);
+  const [blogs, setBlogs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Modal and form states
@@ -42,39 +42,32 @@ export default function BlogsTab({ showNotify, blogs: propBlogs, setBlogs: propS
   // File input ref for cover image upload
   const fileInputRef = useRef(null);
 
+  // Notify parent dashboard on data mutations without causing render loops
+  const notifyChange = useCallback(() => {
+    if (onBlogsChanged) {
+      onBlogsChanged();
+    }
+    window.dispatchEvent(new CustomEvent("rhs_blogs_updated"));
+  }, [onBlogsChanged]);
+
   // -------------------------------------------------------------
-  // 1. LOAD BLOGS
+  // 1. LOAD BLOGS (Clean, stable fetch without circular dependencies)
   // -------------------------------------------------------------
   const loadBlogs = useCallback(async () => {
     setIsLoading(true);
     try {
       const data = await fetchBlogs("all");
       setBlogs(data);
-      if (propSetBlogs) {
-        propSetBlogs(data);
-      }
     } catch (err) {
       console.error("Failed to load blogs:", err);
+      showNotify?.(err.message || "Failed to load blogs from server.", "error");
     } finally {
       setIsLoading(false);
     }
-  }, [propSetBlogs]);
+  }, []);
 
   useEffect(() => {
     loadBlogs();
-
-    const handleUpdate = (e) => {
-      if (e?.detail?.blogs) {
-        setBlogs(e.detail.blogs);
-      } else {
-        loadBlogs();
-      }
-    };
-
-    window.addEventListener("rhs_blogs_updated", handleUpdate);
-    return () => {
-      window.removeEventListener("rhs_blogs_updated", handleUpdate);
-    };
   }, [loadBlogs]);
 
   // -------------------------------------------------------------
@@ -91,6 +84,7 @@ export default function BlogsTab({ showNotify, blogs: propBlogs, setBlogs: propS
     setEditingBlog({
       id: "new",
       title: "",
+      category: "Surgical Innovation",
       tag: "Surgical Innovation",
       excerpt: "",
       subtitle: "",
@@ -101,11 +95,14 @@ export default function BlogsTab({ showNotify, blogs: propBlogs, setBlogs: propS
       authorName: "Dr. Arvind Mehta",
       authorRole: "Sr. Laparoscopic Surgeon",
       authorInitials: "AM",
-      presetKey: "blog_3",
       image: "",
+      thumbnail_url: "",
+      thumbnail_public_id: null,
       featured: false,
       published: true,
-      views: "1.2k",
+      views: "0",
+      specs: [],
+      sections: [],
     });
     setIsModalOpen(true);
   };
@@ -113,39 +110,83 @@ export default function BlogsTab({ showNotify, blogs: propBlogs, setBlogs: propS
   // -------------------------------------------------------------
   // 3. OPEN EDIT MODAL
   // -------------------------------------------------------------
-  const openEditBlogModal = (blog) => {
+  const openEditBlogModal = async (blog) => {
     setFormError("");
-    const takeaways = Array.isArray(blog.keyTakeaways)
-      ? blog.keyTakeaways.join("\n")
+    const takeaways = Array.isArray(blog.key_takeaways || blog.keyTakeaways)
+      ? (blog.key_takeaways || blog.keyTakeaways).join("\n")
       : "";
 
+    // Set initial values from card while fetching fresh full article
     setEditingBlog({
       id: blog.id,
       title: blog.title || "",
-      tag: blog.tag || "Surgical Innovation",
+      category: blog.category || blog.tag || "Surgical Innovation",
+      tag: blog.category || blog.tag || "Surgical Innovation",
       excerpt: blog.excerpt || "",
-      subtitle: blog.subtitle || "",
+      subtitle: blog.article_subtitle || blog.subtitle || "",
       keyTakeawaysText: takeaways,
-      content: blog.content || "",
-      date:
-        blog.date ||
-        new Date().toLocaleDateString("en-US", {
-          day: "2-digit",
-          month: "short",
-          year: "numeric",
-        }),
-      readTime: blog.readTime || "5 min read",
-      authorName: blog.author?.name || "Reinforce Clinical Team",
-      authorRole: blog.author?.role || "Surgical Equipment Specialist",
-      authorInitials: blog.author?.initials || "RC",
-      presetKey: blog.presetKey || "blog_3",
-      image: blog.image || "",
-      featured: Boolean(blog.featured),
-      published: blog.published !== false,
-      views: blog.views || "1.2k",
-      specs: blog.specs || [],
+      content: blog.article_content || blog.content || "",
+      date: blog.published_at || blog.date || "",
+      readTime: blog.reading_time || blog.readTime || "5 min read",
+      authorName: blog.author_name || blog.author?.name || "Reinforce Clinical Team",
+      authorRole: blog.author_role || blog.author?.role || "Surgical Equipment Specialist",
+      authorInitials: (blog.author_name || blog.author?.name || "RC")
+        .split(" ")
+        .map((w) => w[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase() || "RC",
+      image: blog.thumbnail_url || blog.image || "",
+      thumbnail_url: blog.thumbnail_url || blog.image || "",
+      thumbnail_public_id: blog.thumbnail_public_id || null,
+      featured: Boolean(blog.is_featured ?? blog.featured),
+      published: blog.is_active !== undefined ? Boolean(blog.is_active) : (blog.published !== false),
+      views: blog.read_count !== undefined ? String(blog.read_count) : (blog.views || "1.2k"),
+      specs: blog.benchmark_specs || blog.specs || [],
+      sections: blog.article_sections || blog.sections || [],
     });
     setIsModalOpen(true);
+
+    try {
+      const fresh = await fetchBlogById(blog.id);
+      if (fresh) {
+        const freshTakeaways = Array.isArray(fresh.key_takeaways)
+          ? fresh.key_takeaways.join("\n")
+          : (Array.isArray(fresh.keyTakeaways) ? fresh.keyTakeaways.join("\n") : "");
+
+        setEditingBlog((prev) => ({
+          ...prev,
+          id: fresh.id,
+          title: fresh.title || prev.title,
+          category: fresh.category || fresh.tag || prev.category,
+          tag: fresh.category || fresh.tag || prev.tag,
+          excerpt: fresh.excerpt || prev.excerpt,
+          subtitle: fresh.article_subtitle || fresh.subtitle || prev.subtitle,
+          keyTakeawaysText: freshTakeaways !== "" ? freshTakeaways : prev.keyTakeawaysText,
+          content: fresh.article_content || fresh.content || prev.content,
+          date: fresh.published_at || fresh.date || prev.date,
+          readTime: fresh.reading_time || fresh.readTime || prev.readTime,
+          authorName: fresh.author_name || fresh.author?.name || prev.authorName,
+          authorRole: fresh.author_role || fresh.author?.role || prev.authorRole,
+          authorInitials: (fresh.author_name || fresh.author?.name || prev.authorName)
+            .split(" ")
+            .map((w) => w[0])
+            .join("")
+            .slice(0, 2)
+            .toUpperCase() || "RC",
+          image: fresh.thumbnail_url || fresh.image || prev.image,
+          thumbnail_url: fresh.thumbnail_url || fresh.image || prev.thumbnail_url,
+          thumbnail_public_id: fresh.thumbnail_public_id || prev.thumbnail_public_id,
+          featured: Boolean(fresh.is_featured ?? fresh.featured),
+          published: fresh.is_active !== undefined ? Boolean(fresh.is_active) : (fresh.published !== false),
+          views: fresh.read_count !== undefined ? String(fresh.read_count) : prev.views,
+          specs: fresh.benchmark_specs || fresh.specs || prev.specs,
+          sections: fresh.article_sections || fresh.sections || prev.sections,
+        }));
+      }
+    } catch (err) {
+      console.warn("Could not fetch full details, using card data:", err);
+    }
   };
 
   // -------------------------------------------------------------
@@ -175,8 +216,9 @@ export default function BlogsTab({ showNotify, blogs: propBlogs, setBlogs: propS
       const res = await uploadBlogImage(file);
       setEditingBlog((prev) => ({
         ...prev,
-        image: res.image_url,
-        presetKey: "",
+        image: res.thumbnail_url || res.image_url,
+        thumbnail_url: res.thumbnail_url || res.image_url,
+        thumbnail_public_id: res.thumbnail_public_id || res.cloudinary_public_id || null,
       }));
       showNotify?.("Cover image uploaded successfully!");
     } catch (err) {
@@ -219,15 +261,6 @@ export default function BlogsTab({ showNotify, blogs: propBlogs, setBlogs: propS
 
     // Derive initials if needed
     const authorName = (editingBlog.authorName || "Reinforce Clinical Team").trim();
-    const derivedInitials =
-      (editingBlog.authorInitials || "").trim() ||
-      authorName
-        .split(" ")
-        .map((w) => w[0])
-        .join("")
-        .slice(0, 2)
-        .toUpperCase() ||
-      "RC";
 
     // Automatic publication date generation
     const autoDate =
@@ -251,24 +284,21 @@ export default function BlogsTab({ showNotify, blogs: propBlogs, setBlogs: propS
 
     const blogPayload = {
       title: trimmedTitle,
-      tag: (editingBlog.tag || "Surgical Innovation").trim(),
+      category: (editingBlog.category || editingBlog.tag || "Surgical Innovation").trim(),
       excerpt: trimmedExcerpt,
-      subtitle: (editingBlog.subtitle || "").trim(),
-      keyTakeaways,
-      content: (editingBlog.content || "").trim(),
-      date: autoDate,
-      readTime: autoReadTime,
-      author: {
-        name: authorName,
-        role: (editingBlog.authorRole || "Surgical Equipment Specialist").trim(),
-        initials: derivedInitials,
-      },
-      presetKey: editingBlog.presetKey || "blog_3",
-      image: editingBlog.image || "",
-      featured: Boolean(editingBlog.featured),
-      published: editingBlog.published !== false,
-      views: editingBlog.views || "1.2k",
-      specs: editingBlog.specs || [],
+      article_subtitle: (editingBlog.subtitle || "").trim(),
+      key_takeaways: keyTakeaways,
+      article_content: (editingBlog.content || "").trim(),
+      published_at: autoDate,
+      reading_time: autoReadTime,
+      author_name: authorName,
+      author_role: (editingBlog.authorRole || "Surgical Equipment Specialist").trim(),
+      thumbnail_url: editingBlog.thumbnail_url || editingBlog.image || null,
+      thumbnail_public_id: editingBlog.thumbnail_public_id || null,
+      is_featured: Boolean(editingBlog.featured),
+      is_active: editingBlog.published !== false,
+      article_sections: editingBlog.sections || [],
+      benchmark_specs: editingBlog.specs || [],
     };
 
     try {
@@ -283,6 +313,7 @@ export default function BlogsTab({ showNotify, blogs: propBlogs, setBlogs: propS
       setIsModalOpen(false);
       setEditingBlog(null);
       await loadBlogs();
+      notifyChange();
     } catch (err) {
       console.error("Save blog error:", err);
       setFormError(err.message || "Failed to save blog post.");
@@ -305,6 +336,7 @@ export default function BlogsTab({ showNotify, blogs: propBlogs, setBlogs: propS
       await deleteBlog(id);
       showNotify?.("Blog article deleted successfully.");
       await loadBlogs();
+      notifyChange();
     } catch (err) {
       console.error("Delete blog error:", err);
       showNotify?.(err.message || "Failed to delete blog article.", "error");
@@ -312,21 +344,23 @@ export default function BlogsTab({ showNotify, blogs: propBlogs, setBlogs: propS
   };
 
   // -------------------------------------------------------------
-  // 7. TOGGLE FEATURED SPOTLIGHT
+  // 7. STATUS TOGGLE (ACTIVE / INACTIVE)
   // -------------------------------------------------------------
-  const handleToggleFeatured = async (blog) => {
+  const handleToggleStatus = async (blog) => {
+    const isCurrentActive =
+      blog.is_active !== undefined ? blog.is_active : blog.published !== false;
+    const nextActive = !isCurrentActive;
     try {
-      await updateBlog(blog.id, {
-        featured: !blog.featured,
-      });
+      await updateBlog(blog.id, { is_active: nextActive });
       showNotify?.(
-        blog.featured
-          ? `Removed "${blog.title.slice(0, 24)}..." from Spotlight`
-          : `Marked "${blog.title.slice(0, 24)}..." as Featured Spotlight!`
+        `Blog "${(blog.title || "article").slice(0, 20)}..." ${nextActive ? "published" : "unpublished"
+        } successfully!`
       );
       await loadBlogs();
+      notifyChange();
     } catch (err) {
-      console.error("Toggle featured error:", err);
+      console.error("Status toggle error:", err);
+      showNotify?.(err.message || "Failed to update blog status.", "error");
     }
   };
 
@@ -402,7 +436,18 @@ export default function BlogsTab({ showNotify, blogs: propBlogs, setBlogs: propS
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {blogs.map((blog, index) => {
             const displayImage = getResolvedBlogImage(blog);
-            const isPublished = blog.published !== false;
+            const isPublished =
+              blog.is_active !== undefined ? blog.is_active : blog.published !== false;
+            const authorDisplayName =
+              blog.author_name || blog.author?.name || "Reinforce Clinical Team";
+            const authorDisplayRole =
+              blog.author_role || blog.author?.role || "Specialist";
+            const authorInitials = authorDisplayName
+              .split(" ")
+              .map((w) => w[0])
+              .join("")
+              .slice(0, 2)
+              .toUpperCase() || "RH";
 
             return (
               <div
@@ -415,32 +460,9 @@ export default function BlogsTab({ showNotify, blogs: propBlogs, setBlogs: propS
                     <span className="rounded-md bg-slate-900/80 px-2 py-0.5 text-[10px] font-extrabold text-white">
                       #{index + 1}
                     </span>
-                    {blog.featured && (
-                      <span className="flex items-center gap-1 rounded-md bg-amber-500 px-2 py-0.5 text-[10px] font-bold text-white shadow-xs">
-                        <StarRoundedIcon style={{ fontSize: 13 }} />
-                        <span>Spotlight</span>
-                      </span>
-                    )}
                   </div>
 
                   <div className="flex items-center gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => handleToggleFeatured(blog)}
-                      className={`rounded-lg border p-1 transition cursor-pointer ${
-                        blog.featured
-                          ? "border-amber-300 bg-amber-50 text-amber-600"
-                          : "border-slate-200 bg-white text-slate-400 hover:text-amber-500 hover:border-amber-300"
-                      }`}
-                      title={blog.featured ? "Remove from Spotlight" : "Feature on Spotlight"}
-                    >
-                      {blog.featured ? (
-                        <StarRoundedIcon style={{ fontSize: 18 }} />
-                      ) : (
-                        <StarOutlineRoundedIcon style={{ fontSize: 18 }} />
-                      )}
-                    </button>
-
                     <button
                       type="button"
                       onClick={() => openEditBlogModal(blog)}
@@ -470,16 +492,10 @@ export default function BlogsTab({ showNotify, blogs: propBlogs, setBlogs: propS
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-70" />
 
-                  {/* Category Pill with Glowing Dot */}
-                  <div className="absolute top-3 left-3 flex items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-0.5 text-[10px] font-bold text-primary shadow-xs backdrop-blur-md">
-                    <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-                    <span>{blog.tag || "Article"}</span>
-                  </div>
-
                   {/* Reading Time Pill */}
                   <div className="absolute bottom-2.5 left-3 flex items-center gap-1 rounded-md bg-black/60 px-2 py-0.5 text-[10px] font-medium text-white backdrop-blur-xs">
                     <AccessTimeOutlinedIcon style={{ fontSize: 12 }} className="text-sky-300" />
-                    <span>{blog.readTime || "5 min read"}</span>
+                    <span>{blog.reading_time || blog.readTime || "5 min read"}</span>
                   </div>
                 </div>
 
@@ -490,11 +506,11 @@ export default function BlogsTab({ showNotify, blogs: propBlogs, setBlogs: propS
                     <div className="flex items-center justify-between text-[11px] text-slate-400">
                       <span className="flex items-center gap-1 font-medium text-slate-500">
                         <CalendarTodayOutlinedIcon style={{ fontSize: 12 }} />
-                        {blog.date}
+                        {blog.published_at || blog.date}
                       </span>
                       <span className="flex items-center gap-1">
                         <RemoveRedEyeOutlinedIcon style={{ fontSize: 13 }} />
-                        {blog.views || "1.2k"} reads
+                        {blog.read_count !== undefined ? `${blog.read_count}` : (blog.views || "1.2k")} reads
                       </span>
                     </div>
 
@@ -512,14 +528,14 @@ export default function BlogsTab({ showNotify, blogs: propBlogs, setBlogs: propS
                   {/* Author Bar */}
                   <div className="mt-3 flex items-center gap-2 pt-2 border-t border-slate-100">
                     <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-sky-100 text-[11px] font-bold text-primary-dark">
-                      {blog.author?.initials || "RH"}
+                      {authorInitials}
                     </div>
                     <div className="truncate flex-1">
                       <p className="text-xs font-bold text-slate-800 truncate">
-                        {blog.author?.name || "Reinforce Clinical Team"}
+                        {authorDisplayName}
                       </p>
                       <p className="text-[10px] text-slate-400 truncate">
-                        {blog.author?.role || "Specialist"}
+                        {authorDisplayRole}
                       </p>
                     </div>
                   </div>
@@ -528,17 +544,24 @@ export default function BlogsTab({ showNotify, blogs: propBlogs, setBlogs: propS
                 {/* Card Footer: Status & Quick Reader Preview */}
                 <div className="p-4 pt-2 border-t border-slate-100 flex items-center justify-between bg-slate-50/40">
                   <div>
-                    {isPublished ? (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600">
-                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                        Active / Published
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-400">
-                        <span className="h-1.5 w-1.5 rounded-full bg-slate-400" />
-                        Draft / Inactive
-                      </span>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => handleToggleStatus(blog)}
+                      className="cursor-pointer transition hover:opacity-80"
+                      title="Click to toggle publish status"
+                    >
+                      {isPublished ? (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600">
+                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                          Active / Published
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-400">
+                          <span className="h-1.5 w-1.5 rounded-full bg-slate-400" />
+                          Draft / Inactive
+                        </span>
+                      )}
+                    </button>
                   </div>
 
                   <button
@@ -633,9 +656,9 @@ export default function BlogsTab({ showNotify, blogs: propBlogs, setBlogs: propS
                       <span>
                         {isUploadingImage
                           ? "Uploading..."
-                          : editingBlog.image
-                          ? "Replace Cover Image"
-                          : "Upload Cover Image"}
+                          : editingBlog.image || editingBlog.thumbnail_url
+                            ? "Replace Cover Image"
+                            : "Upload Cover Image"}
                       </span>
                       <input
                         ref={fileInputRef}
@@ -837,15 +860,15 @@ export default function BlogsTab({ showNotify, blogs: propBlogs, setBlogs: propS
             {/* Category, Date, Read Time */}
             <div className="flex flex-wrap items-center gap-2.5">
               <span className="rounded-full bg-gradient-to-r from-primary to-primary-dark px-3 py-0.5 text-xs font-bold uppercase tracking-wider text-white">
-                {previewBlog.tag}
+                {previewBlog.category || previewBlog.tag || "Article"}
               </span>
               <span className="flex items-center gap-1 text-xs text-slate-500">
                 <CalendarTodayOutlinedIcon style={{ fontSize: 13 }} />
-                {previewBlog.date}
+                {previewBlog.published_at || previewBlog.date}
               </span>
               <span className="flex items-center gap-1 text-xs text-slate-500">
                 <AccessTimeOutlinedIcon style={{ fontSize: 13 }} />
-                {previewBlog.readTime}
+                {previewBlog.reading_time || previewBlog.readTime || "5 min read"}
               </span>
             </div>
 
@@ -857,14 +880,19 @@ export default function BlogsTab({ showNotify, blogs: propBlogs, setBlogs: propS
             {/* Author */}
             <div className="mt-4 flex items-center gap-3 border-b border-slate-100 pb-4">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-sky-100 text-sm font-bold text-primary-dark">
-                {previewBlog.author?.initials || "RH"}
+                {(previewBlog.author_name || previewBlog.author?.name || "RH")
+                  .split(" ")
+                  .map((w) => w[0])
+                  .join("")
+                  .slice(0, 2)
+                  .toUpperCase() || "RH"}
               </div>
               <div>
                 <p className="text-xs font-bold text-slate-900">
-                  {previewBlog.author?.name || "Reinforce Clinical Team"}
+                  {previewBlog.author_name || previewBlog.author?.name || "Reinforce Clinical Team"}
                 </p>
                 <p className="text-[11px] text-slate-500">
-                  {previewBlog.author?.role || "Surgical Equipment Specialist"}
+                  {previewBlog.author_role || previewBlog.author?.role || "Surgical Equipment Specialist"}
                 </p>
               </div>
             </div>
@@ -879,35 +907,38 @@ export default function BlogsTab({ showNotify, blogs: propBlogs, setBlogs: propS
             </div>
 
             {/* Subtitle / Excerpt */}
-            <p className="mt-6 text-sm text-slate-600 leading-relaxed font-medium italic">
-              {previewBlog.subtitle || previewBlog.excerpt}
-            </p>
+            {(previewBlog.article_subtitle || previewBlog.subtitle) && (
+              <p className="mt-6 text-sm text-slate-600 leading-relaxed font-medium italic">
+                {previewBlog.article_subtitle || previewBlog.subtitle}
+              </p>
+            )}
 
             {/* Key Takeaways */}
-            {Array.isArray(previewBlog.keyTakeaways) && previewBlog.keyTakeaways.length > 0 && (
-              <div className="mt-6 rounded-2xl border border-sky-100 bg-sky-50/70 p-5">
-                <div className="flex items-center gap-2 text-xs font-bold text-primary">
-                  <StarRoundedIcon style={{ fontSize: 16 }} />
-                  <span>Key Clinical Takeaways</span>
+            {Array.isArray(previewBlog.key_takeaways || previewBlog.keyTakeaways) &&
+              (previewBlog.key_takeaways || previewBlog.keyTakeaways).length > 0 && (
+                <div className="mt-6 rounded-2xl border border-sky-100 bg-sky-50/70 p-5">
+                  <div className="flex items-center gap-2 text-xs font-bold text-primary">
+                    <CheckCircleOutlinedIcon style={{ fontSize: 16 }} />
+                    <span>Key Clinical Takeaways</span>
+                  </div>
+                  <ul className="mt-2.5 space-y-2">
+                    {(previewBlog.key_takeaways || previewBlog.keyTakeaways).map((point, idx) => (
+                      <li
+                        key={idx}
+                        className="flex items-start gap-2 text-xs text-slate-700"
+                      >
+                        <CheckCircleOutlinedIcon style={{ fontSize: 15 }} className="text-primary shrink-0 mt-0.5" />
+                        <span>{point}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-                <ul className="mt-2.5 space-y-2">
-                  {previewBlog.keyTakeaways.map((point, idx) => (
-                    <li
-                      key={idx}
-                      className="flex items-start gap-2 text-xs text-slate-700"
-                    >
-                      <CheckCircleOutlinedIcon style={{ fontSize: 15 }} className="text-primary shrink-0 mt-0.5" />
-                      <span>{point}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+              )}
 
             {/* Article Content */}
             <div className="mt-6 text-xs sm:text-sm text-slate-700 leading-relaxed space-y-4">
-              {previewBlog.content ? (
-                <p>{previewBlog.content}</p>
+              {previewBlog.article_content || previewBlog.content ? (
+                <p>{previewBlog.article_content || previewBlog.content}</p>
               ) : (
                 <p>{previewBlog.excerpt}</p>
               )}

@@ -1,5 +1,7 @@
+import { ENV } from "./env";
+
 export const SITE_CONFIG = {
-  domain: "https://www.reinforcehealth.com", // Replace with your actual production domain
+  domain: ENV.SITE_URL, // Configured via VITE_SITE_URL in .env
   siteName: "Reinforce Healthcare Services",
   defaultTitle: "Reinforce Healthcare Services | Medical Equipment & Machine Rental for Hospitals & Doctors",
   titleTemplate: "%s | Reinforce Healthcare Services",

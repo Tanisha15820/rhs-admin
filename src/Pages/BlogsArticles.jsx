@@ -26,8 +26,7 @@ function BlogsArticles({ showNotify: propNotify }) {
       />
       <BlogsTab
         showNotify={showNotify}
-        blogs={context.blogs}
-        setBlogs={context.setBlogs}
+        onBlogsChanged={context.reloadBlogs}
       />
     </>
   );

@@ -13,7 +13,11 @@ import { clearLegacyTestimonialsStorage } from "../utils/testimonialStorage";
 import { fetchClients } from "../services/clientService";
 import { clearLegacyClientsStorage } from "../utils/clientStorage";
 import { getAllFaqs } from "../utils/faqStorage";
-import { getAllBlogs, clearLegacyBlogsStorage } from "../utils/blogStorage";
+import { fetchBlogs } from "../services/blogService";
+import { clearLegacyBlogsStorage } from "../utils/blogStorage";
+import { getAllNewsletters } from "../utils/newsletterStorage";
+import { INITIAL_MOCK_ENQUIRIES } from "../utils/mockContactEnquiries";
+import { fetchMachineQueries } from "../services/productEnquiryService";
 
 /**
  * AdminDashboard Layout & Parent Container
@@ -30,6 +34,8 @@ function AdminDashboard() {
   const [faqs, setFaqs] = useState([]);
   const [clients, setClients] = useState([]);
   const [blogs, setBlogs] = useState([]);
+  const [newsletters, setNewsletters] = useState([]);
+  const [machineQueriesCount, setMachineQueriesCount] = useState(0);
 
   // Toast notification feedback message
   const [notification, setNotification] = useState(null);
@@ -66,6 +72,30 @@ function AdminDashboard() {
       });
   };
 
+  const reloadBlogs = () => {
+    fetchBlogs("all")
+      .then((data) => setBlogs(data))
+      .catch((err) => {
+        console.error("Failed to load blogs from API:", err);
+      });
+  };
+
+  const reloadNewsletters = () => {
+    setNewsletters(getAllNewsletters());
+  };
+
+  const reloadMachineQueriesCount = () => {
+    fetchMachineQueries()
+      .then((res) => {
+        if (typeof res.total === "number") {
+          setMachineQueriesCount(res.total);
+        } else if (Array.isArray(res.queries)) {
+          setMachineQueriesCount(res.queries.length);
+        }
+      })
+      .catch(() => {});
+  };
+
   // Load all data on initial page render and on updates
   useEffect(() => {
     clearLegacyTestimonialsStorage();
@@ -78,7 +108,9 @@ function AdminDashboard() {
       reloadTestimonials();
       setFaqs(getAllFaqs());
       reloadClients();
-      setBlogs(getAllBlogs());
+      reloadBlogs();
+      reloadNewsletters();
+      reloadMachineQueriesCount();
     };
 
     loadAllData();
@@ -89,7 +121,12 @@ function AdminDashboard() {
     window.addEventListener("rhs_testimonials_updated", reloadTestimonials);
     window.addEventListener("rhs_faqs_updated", loadAllData);
     window.addEventListener("rhs_clients_updated", reloadClients);
-    window.addEventListener("rhs_blogs_updated", loadAllData);
+    window.addEventListener("rhs_blogs_updated", reloadBlogs);
+    window.addEventListener("rhs_newsletters_updated", reloadNewsletters);
+    window.addEventListener(
+      "rhs_machine_queries_updated",
+      reloadMachineQueriesCount
+    );
     window.addEventListener("storage", loadAllData);
 
     return () => {
@@ -98,7 +135,12 @@ function AdminDashboard() {
       window.removeEventListener("rhs_testimonials_updated", reloadTestimonials);
       window.removeEventListener("rhs_faqs_updated", loadAllData);
       window.removeEventListener("rhs_clients_updated", reloadClients);
-      window.removeEventListener("rhs_blogs_updated", loadAllData);
+      window.removeEventListener("rhs_blogs_updated", reloadBlogs);
+      window.removeEventListener("rhs_newsletters_updated", reloadNewsletters);
+      window.removeEventListener(
+        "rhs_machine_queries_updated",
+        reloadMachineQueriesCount
+      );
       window.removeEventListener("storage", loadAllData);
     };
   }, []);
@@ -112,6 +154,9 @@ function AdminDashboard() {
         faqs: faqs.length,
         clients: clients.length,
         blogs: blogs.length,
+        newsletters: newsletters.length,
+        contacts: INITIAL_MOCK_ENQUIRIES.length,
+        productEnquiries: machineQueriesCount,
       }}
     >
       {/* Floating Notification Toast Popup */}
@@ -167,19 +212,14 @@ function AdminDashboard() {
             reloadClients,
             blogs,
             setBlogs,
+            reloadBlogs,
+            newsletters,
+            setNewsletters,
+            reloadNewsletters,
             showNotify,
           }}
         />
-      ) : (
-        /* Temporarily commented out fallback banner section
-        <BannersTab
-          banners={banners}
-          setBanners={setBanners}
-          showNotify={showNotify}
-        />
-        */
-        null
-      )}
+      ) : null}
     </AdminLayout>
   );
 }

@@ -1,16 +1,6 @@
 import axios from "axios";
 import { getAuthToken } from "../utils/auth";
-
-/**
- * Resolve the base API endpoint URL without duplicate /api prefixes
- */
-const getBaseApiUrl = () => {
-  const envUrl =
-    typeof import.meta !== "undefined" && import.meta.env?.VITE_API_URL;
-  if (!envUrl) return "/api";
-  const clean = envUrl.replace(/\/api\/?$/, "").replace(/\/$/, "");
-  return `${clean}/api`;
-};
+import { getBaseApiUrl } from "../config/env";
 
 /**
  * Helper to get default authorization headers with the current admin JWT
